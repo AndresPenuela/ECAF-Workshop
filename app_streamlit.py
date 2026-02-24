@@ -25,10 +25,18 @@ actual_rainfall = rainfall * 0.9 if climate_change else rainfall
 base_runoff_pct = 0.30 if climate_change else 0.20 # Higher intensity means more base runoff
 
 # 2. Infiltration & Runoff (Section 3)
-# Every 10% cover improves infiltration by 1% (reduces runoff by 1%)
-runoff_reduction = (cover_pct / 10) * 0.01
-final_runoff_pct = max(0.05, base_runoff_pct - runoff_reduction) # Assume min 5% runoff
-runoff_mm = actual_rainfall * final_runoff_pct
+# Based on the empirical model: runoff_coeff = 11.59 - 0.11 * cover_pct
+runoff_coeff = 11.59 - (0.11 * cover_pct)
+
+# Apply Climate Change penalty (Assume +20% higher runoff due to storm intensity)
+if climate_change:
+    runoff_coeff = runoff_coeff * 1.20
+
+# Ensure the coefficient never drops below 0 mathematically
+runoff_coeff = max(0.0, runoff_coeff)
+
+# Calculate total runoff in mm (dividing by 100 because the coefficient is a percentage)
+runoff_mm = actual_rainfall * (runoff_coeff / 100)
 
 # 3. Evaporation (Section 4)
 # Base evaporation for bare soil. Cover crop mulch reduces it.
