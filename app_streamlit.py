@@ -15,7 +15,7 @@ def project_parameters(veg_cover, years):
     rain_increase_pct = years * 0.5
     baseline_oc = 1.5
     veg_eq = get_equilibrium_veg()
-    annual_oc_change = (veg_cover - veg_eq) * 0.001 
+    annual_oc_change = (veg_cover - veg_eq) * 0.0015 
     future_oc = max(0.5, min(5.0, baseline_oc + (annual_oc_change * years))) 
     return rain_increase_pct, future_oc
 
@@ -28,7 +28,7 @@ def predict_soil_loss(veg_cover, rain_increase_pct, oc_pct):
 def predict_runoff(veg_cover, rain_increase_pct, oc_pct):
     base_runoff = np.maximum(0, -0.11 * veg_cover + 11.59)
     m_rain = 1.0 + (rain_increase_pct / 100.0) * 0.5 
-    m_oc = np.exp(-0.2 * (oc_pct - 1.5))
+    m_oc = np.exp(-0.3 * (oc_pct - 1.5))
     return np.minimum(100.0, base_runoff * m_rain * m_oc)
 
 def estimate_productivity(rainfall):
