@@ -35,7 +35,7 @@ def estimate_productivity(rainfall):
     return np.maximum(0, np.minimum(3350, 10 * (rainfall - 120)))
 
 # Constants
-RO_BASELINE = predict_runoff(15.0, 0.0, 1.5) # Baseline Runoff at 15% veg cover, Year 0
+RO_BASELINE = predict_runoff(0.0, 0.0, 1.5) # Baseline Runoff at 0% veg cover, Year 0
 EQ_VEG = get_equilibrium_veg()
 X_VALS = np.linspace(0, 100, 500)
 RAIN_RANGE = np.linspace(0, 1000, 500)
@@ -108,7 +108,7 @@ with col_charts1:
 
 # --- Panel 2: Agronomic Impact ---
 with col_charts2:
-    fig2, ax2 = plt.subplots(figsize=(8, 6), facecolor='#f8f9fa')
+    fig2, ax2 = plt.subplots(figsize=(8, 5), facecolor='#f8f9fa')
     
     prod_curve = estimate_productivity(RAIN_RANGE)
     ax2.plot(RAIN_RANGE, prod_curve, '#27ae60', lw=2.5, linestyle='--')
