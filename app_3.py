@@ -57,7 +57,7 @@ except OSError:
     except OSError:
         pass 
 
-fig, ax1 = plt.subplots(figsize=(10, 7), facecolor='#f4f6f9')
+fig, ax1 = plt.subplots(figsize=(10, 6), facecolor='#f4f6f9')
 
 rain_range = np.linspace(0, 1000, 500)
 estimated_productivity = estimate_productivity(rain_range)
