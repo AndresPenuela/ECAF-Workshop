@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 # --- 1. App Configuration ---
 st.set_page_config(page_title="Agro-Hydrological Dashboard", layout="wide")
 st.title("Unified Agro-Hydrological Model (Andalusia)")
-st.markdown("Interactive tool for modeling the impact of vegetation cover on soil erosion, runoff, and olive productivity under future climate scenarios.")
+st.markdown("Interactive tool for modeling the impact of vegetation cover on runoff and olive productivity under future climate scenarios.")
 
 # --- 2. Mathematical Models ---
 def get_equilibrium_veg():
@@ -84,63 +84,48 @@ except OSError:
 
 marker_style = dict(marker='o', markersize=12, markerfacecolor='#f1c40f', markeredgecolor='#2c3e50', markeredgewidth=2)
 
-# --- Panel 1 & 2: Soil Loss and Runoff ---
+# Set up the two columns for the side-by-side layout
 col_charts1, col_charts2 = st.columns(2)
 
+# --- Panel 1: Runoff ---
 with col_charts1:
-    fig1, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 10), facecolor='#f8f9fa')
-    plt.subplots_adjust(hspace=0.4)
+    fig1, ax1 = plt.subplots(figsize=(8, 6), facecolor='#f8f9fa')
     
-    # Soil Loss Chart
-    y_soil = predict_soil_loss(X_VALS, r_inc, oc)
-    ax1.plot(X_VALS, y_soil, '#e74c3c', lw=3.5)
-    ax1.fill_between(X_VALS, y_soil, color='#e74c3c', alpha=0.15)
-    ax1.axhline(1.4, color='#27ae60', linestyle='--', lw=2.5, label='Tolerable Limit')
-    ax1.axhspan(0, 1.4, color='#2ecc71', alpha=0.9, zorder=1)
-    ax1.axvline(EQ_VEG, color='gray', linestyle=':', lw=2)
-    ax1.plot([veg_cover], [sl], **marker_style, zorder=10)
+    y_runoff = predict_runoff(X_VALS, r_inc, oc)
+    ax1.plot(X_VALS, y_runoff, '#3498db', lw=3.5)
+    ax1.fill_between(X_VALS, y_runoff, color='#3498db', alpha=0.15)
+    ax1.axvline(EQ_VEG, color='gray', linestyle=':', lw=2, label='OC Tipping Point')
+    ax1.plot([veg_cover], [ro], **marker_style, zorder=10)
     
     ax1.set_xlim(0, 100)
-    ax1.set_ylim(0, max(15, max(y_soil) * 1.1)) 
-    ax1.set_ylabel('Soil loss (t/ha/y)', fontweight='bold')
-    ax1.set_title('Future Soil Loss Projection', fontweight='bold', color='#34495e')
-    
-    # Runoff Chart
-    y_runoff = predict_runoff(X_VALS, r_inc, oc)
-    ax2.plot(X_VALS, y_runoff, '#3498db', lw=3.5)
-    ax2.fill_between(X_VALS, y_runoff, color='#3498db', alpha=0.15)
-    ax2.axvline(EQ_VEG, color='gray', linestyle=':', lw=2, label='OC Tipping Point')
-    ax2.plot([veg_cover], [ro], **marker_style, zorder=10)
-    
-    ax2.set_xlim(0, 100)
-    ax2.set_ylim(0, max(15, max(y_runoff) * 1.1))
-    ax2.set_ylabel('Runoff coefficient (%)', fontweight='bold')
-    ax2.set_xlabel('Vegetation cover (%)', fontweight='bold')
-    ax2.set_title('Future Runoff Projection', fontweight='bold', color='#34495e')
-    ax2.legend(loc='upper right')
+    ax1.set_ylim(0, max(15, max(y_runoff) * 1.1))
+    ax1.set_ylabel('Runoff coefficient (%)', fontweight='bold', fontsize=12)
+    ax1.set_xlabel('Vegetation cover (%)', fontweight='bold', fontsize=12)
+    ax1.set_title('Future Runoff Projection', fontweight='bold', color='#34495e', fontsize=14)
+    ax1.legend(loc='upper right')
     
     st.pyplot(fig1)
 
-# --- Panel 3: Agronomic Impact ---
+# --- Panel 2: Agronomic Impact ---
 with col_charts2:
-    fig2, ax3 = plt.subplots(figsize=(8, 10.3), facecolor='#f8f9fa')
+    fig2, ax2 = plt.subplots(figsize=(8, 6), facecolor='#f8f9fa')
     
     prod_curve = estimate_productivity(RAIN_RANGE)
-    ax3.plot(RAIN_RANGE, prod_curve, '#27ae60', lw=2.5, linestyle='--')
+    ax2.plot(RAIN_RANGE, prod_curve, '#27ae60', lw=2.5, linestyle='--')
     
     # Plot Baseline vs Effective
-    ax3.plot([gross_rain], [prod_base], marker='o', markersize=10, markerfacecolor='gray', markeredgecolor='black', label='Gross Rain (Baseline)')
-    ax3.plot([effective_rain], [prod_eff], **marker_style, label='Effective Rain (New Yield)')
+    ax2.plot([gross_rain], [prod_base], marker='o', markersize=10, markerfacecolor='gray', markeredgecolor='black', label='Gross Rain (Baseline)')
+    ax2.plot([effective_rain], [prod_eff], **marker_style, label='Effective Rain (New Yield)')
     
     # Arrow showing the shift
-    ax3.annotate('', xy=(effective_rain, prod_eff), xytext=(gross_rain, prod_base), 
+    ax2.annotate('', xy=(effective_rain, prod_eff), xytext=(gross_rain, prod_base), 
                  arrowprops=dict(facecolor='#e67e22', shrink=0, width=2, headwidth=8), zorder=9)
     
-    ax3.set_xlim(0, 1000)
-    ax3.set_ylim(0, 4500)
-    ax3.set_ylabel('Productivity (kg/ha)', fontweight='bold', fontsize=12)
-    ax3.set_xlabel('Annual Rainfall (mm)', fontweight='bold', fontsize=12)
-    ax3.set_title('Agronomic Impact (Yield vs Rainfall)', fontweight='bold', color='#34495e', fontsize=14)
-    ax3.legend(loc='lower right')
+    ax2.set_xlim(0, 1000)
+    ax2.set_ylim(0, 4500)
+    ax2.set_ylabel('Productivity (kg/ha)', fontweight='bold', fontsize=12)
+    ax2.set_xlabel('Annual Rainfall (mm)', fontweight='bold', fontsize=12)
+    ax2.set_title('Agronomic Impact (Yield vs Rainfall)', fontweight='bold', color='#34495e', fontsize=14)
+    ax2.legend(loc='lower right')
     
     st.pyplot(fig2)
