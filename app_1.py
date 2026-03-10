@@ -26,7 +26,6 @@ def predict_runoff(veg_cover, rain_increase_pct, oc_pct):
     base_runoff = np.maximum(0, -0.11 * veg_cover + 11.59)
     
     m_rain = 1.0 + (rain_increase_pct / 100.0) * 0.5 
-    # Updated exponential modifier so 1.5% OC acts as the true baseline
     m_oc = np.exp(-0.2 * (oc_pct - 1.5))
     
     final_runoff = base_runoff * m_rain * m_oc
@@ -67,55 +66,66 @@ except OSError:
     except OSError:
         pass
 
-fig = plt.figure(figsize=(10, 9), facecolor='#f8f9fa')
-ax1 = fig.add_subplot(211, facecolor='#ffffff')
-ax2 = fig.add_subplot(212, facecolor='#ffffff')
-plt.subplots_adjust(bottom=0.1, hspace=0.35) 
-
 box_style = dict(boxstyle='round,pad=1', facecolor='#ffffff', alpha=0.95, edgecolor='#bdc3c7', linewidth=1.5)
-marker_style = dict(marker='o', markersize=14, markerfacecolor='#f1c40f', markeredgecolor='#2c3e50', markeredgewidth=2.5, zorder=10)
+marker_style = dict(marker='o', markersize=12, markerfacecolor='#f1c40f', markeredgecolor='#2c3e50', markeredgewidth=2, zorder=10)
 
 color_soil = '#e74c3c'
 color_runoff = '#3498db'
 
-# === Plot a) Soil Loss ===
-ax1.plot(x_vals, new_y_soil, color=color_soil, lw=3.5, label='Soil loss model', zorder=4)
-ax1.fill_between(x_vals, new_y_soil, color=color_soil, alpha=0.15, zorder=2)
-ax1.axhline(1.4, color='#27ae60', linestyle='--', lw=2.5, label='Tolerable Limit (1.4 t/ha/y)', zorder=5)
-ax1.axvline(eq_veg, color='gray', linestyle=':', lw=2, label='OC Equilibrium Tipping Point', zorder=3)
-ax1.axhspan(0, 1.4, color='#2ecc71', alpha=0.9, zorder=1) 
+# Create two columns to display charts side-by-side
+col1, col2 = st.columns(2)
 
-# Dynamic Point and Text
-ax1.plot([v], [sl], **marker_style)
-text_sl = f'Parameters:\n• Erosivity Inc: +{r_inc:.1f}%\n• Soil OC: {oc:.2f}%\n\nSoil Loss: {sl:.2f} t/ha/y\nStatus: {status}'
-ax1.text(0.75, 0.40, text_sl, transform=ax1.transAxes, fontsize=11, fontweight='bold', bbox=box_style, zorder=11, color=text_color)
+# === Plot a) Soil Loss (Left Column) ===
+with col1:
+    fig1, ax1 = plt.subplots(figsize=(6, 5), facecolor='#f8f9fa')
+    plt.subplots_adjust(bottom=0.15)
+    
+    ax1.plot(x_vals, new_y_soil, color=color_soil, lw=3, label='Soil loss model', zorder=4)
+    ax1.fill_between(x_vals, new_y_soil, color=color_soil, alpha=0.15, zorder=2)
+    ax1.axhline(1.4, color='#27ae60', linestyle='--', lw=2, label='Tolerable Limit (1.4 t/ha/y)', zorder=5)
+    ax1.axvline(eq_veg, color='gray', linestyle=':', lw=1.5, label='OC Equilibrium Tipping Point', zorder=3)
+    ax1.axhspan(0, 1.4, color='#2ecc71', alpha=0.9, zorder=1) 
 
-ax1.set_xlim(0, 100)
-# Dynamic Y-Axis scale based on spikes
-max_soil = max(new_y_soil)
-ax1.set_ylim(0, max(15, max_soil * 1.1) if max_soil > 15 else 15) 
+    # Dynamic Point and Text
+    ax1.plot([v], [sl], **marker_style)
+    text_sl = f'Parameters:\n• Erosivity Inc: +{r_inc:.1f}%\n• Soil OC: {oc:.2f}%\n\nSoil Loss: {sl:.2f} t/ha/y\nStatus: {status}'
+    
+    # Adjusted text position to fit the smaller figure
+    ax1.text(0.50, 0.40, text_sl, transform=ax1.transAxes, fontsize=10, fontweight='bold', bbox=box_style, zorder=11, color=text_color)
 
-ax1.set_ylabel('Soil loss (t/ha/y)', fontsize=12, fontweight='bold', color='#34495e')
-ax1.set_title('Soil loss model - Scenario exploration', fontsize=15, color='#34495e', pad=15)
-ax1.grid(True, color='#e2e8f0', linestyle='-', linewidth=1.5, zorder=0)
+    ax1.set_xlim(0, 100)
+    # Dynamic Y-Axis scale based on spikes
+    max_soil = max(new_y_soil)
+    ax1.set_ylim(0, max(15, max_soil * 1.1) if max_soil > 15 else 15) 
 
-# === Plot b) Runoff Coefficient ===
-ax2.plot(x_vals, new_y_runoff, color=color_runoff, lw=3.5, label='Runoff model', zorder=4)
-ax2.fill_between(x_vals, new_y_runoff, color=color_runoff, alpha=0.15, zorder=2)
-ax2.axvline(eq_veg, color='gray', linestyle=':', lw=2, label='OC Equilibrium Tipping Point', zorder=3)
+    ax1.set_ylabel('Soil loss (t/ha/y)', fontsize=11, fontweight='bold', color='#34495e')
+    ax1.set_xlabel('Vegetation cover (%)', fontsize=11, fontweight='bold', color='#34495e')
+    ax1.set_title('Soil loss model - Scenario exploration', fontsize=13, color='#34495e', pad=10)
+    ax1.grid(True, color='#e2e8f0', linestyle='-', linewidth=1, zorder=0)
+    
+    st.pyplot(fig1)
 
-# Dynamic Point and Text
-ax2.plot([v], [ro], **marker_style)
-text_ro = f'Parameters:\n• Erosivity Inc: +{r_inc:.1f}%\n• Soil OC: {oc:.2f}%\n\nRunoff: {ro:.2f} %'
-ax2.text(0.75, 0.40, text_ro, transform=ax2.transAxes, fontsize=11, fontweight='bold', bbox=box_style, zorder=11, color='#2980b9')
+# === Plot b) Runoff Coefficient (Right Column) ===
+with col2:
+    fig2, ax2 = plt.subplots(figsize=(6, 5), facecolor='#f8f9fa')
+    plt.subplots_adjust(bottom=0.15)
 
-ax2.set_xlim(0, 100)
-ax2.set_ylim(0, 15)
-ax2.set_ylabel('Runoff coefficient (%)', fontsize=12, fontweight='bold', color='#34495e')
-ax2.set_xlabel('Vegetation cover (%)', fontsize=12, fontweight='bold', color='#34495e')
-ax2.set_title('Runoff model - Scenario exploration', fontsize=15, color='#34495e', pad=15)
-ax2.grid(True, color='#e2e8f0', linestyle='-', linewidth=1.5, zorder=0)
+    ax2.plot(x_vals, new_y_runoff, color=color_runoff, lw=3, label='Runoff model', zorder=4)
+    ax2.fill_between(x_vals, new_y_runoff, color=color_runoff, alpha=0.15, zorder=2)
+    ax2.axvline(eq_veg, color='gray', linestyle=':', lw=1.5, label='OC Equilibrium Tipping Point', zorder=3)
 
-# --- 6. Render the Plot ---
-# st.pyplot() draws the Matplotlib figure right into the browser
-st.pyplot(fig)
+    # Dynamic Point and Text
+    ax2.plot([v], [ro], **marker_style)
+    text_ro = f'Parameters:\n• Erosivity Inc: +{r_inc:.1f}%\n• Soil OC: {oc:.2f}%\n\nRunoff: {ro:.2f} %'
+    
+    # Adjusted text position to fit the smaller figure
+    ax2.text(0.50, 0.40, text_ro, transform=ax2.transAxes, fontsize=10, fontweight='bold', bbox=box_style, zorder=11, color='#2980b9')
+
+    ax2.set_xlim(0, 100)
+    ax2.set_ylim(0, 15)
+    ax2.set_ylabel('Runoff coefficient (%)', fontsize=11, fontweight='bold', color='#34495e')
+    ax2.set_xlabel('Vegetation cover (%)', fontsize=11, fontweight='bold', color='#34495e')
+    ax2.set_title('Runoff model - Scenario exploration', fontsize=13, color='#34495e', pad=10)
+    ax2.grid(True, color='#e2e8f0', linestyle='-', linewidth=1, zorder=0)
+    
+    st.pyplot(fig2)
