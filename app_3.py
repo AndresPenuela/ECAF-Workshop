@@ -3,125 +3,101 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # --- 1. App Configuration ---
-st.set_page_config(page_title="Future Soil Loss & Runoff", layout="wide")
-st.title("Predictive Erosion & Runoff Model")
-st.markdown("Adjust the parameters in the sidebar to see the projected impact on soil loss and runoff.")
+st.set_page_config(page_title="Olive Productivity Model", layout="centered")
+st.title("Olive Productivity Estimation Model")
+st.markdown("Interactive tool to estimate olive yield based on annual rainfall in Andalusia.")
 
-# --- 2. Predictive Mathematical Models ---
-def get_equilibrium_veg():
-    """Calculates the exact veg cover needed to reach tolerable soil loss (1.4)."""
-    return - (1.0 / 0.06) * np.log(1.4 / 11.47)
+# --- 2. Mathematical Model & Constants ---
+def estimate_productivity(rainfall):
+    """Calculates olive productivity trend based on a segmented linear-plateau model."""
+    return np.maximum(0, np.minimum(3350, 10 * (rainfall - 120)))
 
-def project_parameters(veg_cover, years):
-    """Predicts future rainfall erosivity and OC based on time and management."""
-    rain_increase_pct = years * 0.5
-    baseline_oc = 1.5
-    veg_eq = get_equilibrium_veg() 
-    annual_oc_change = (veg_cover - veg_eq) * 0.002
-    future_oc = baseline_oc + (annual_oc_change * years)
-    future_oc = max(0.5, min(5.0, future_oc)) 
-    return rain_increase_pct, future_oc
+BASE_RAIN = 450.0
+BASE_PROD = estimate_productivity(BASE_RAIN)
 
-def predict_soil_loss(veg_cover, rain_increase_pct, oc_pct):
-    """Calculates soil loss with RUSLE R and K factor adjustments."""
-    base_soil_loss = 11.47 * np.exp(-0.06 * veg_cover)
-    m_r = 1.0 + (rain_increase_pct / 100.0)
-    om_baseline = 1.5 * 1.724 
-    om_new = oc_pct * 1.724
-    m_k = (12.0 - om_new) / (12.0 - om_baseline)
-    m_k = max(0.1, m_k) 
-    return base_soil_loss * m_r * m_k
-
-def predict_runoff(veg_cover, rain_increase_pct, oc_pct):
-    """Calculates runoff coefficient with hydrological modifiers."""
-    base_runoff = np.maximum(0, -0.11 * veg_cover + 11.59)
-    m_rain = 1.0 + (rain_increase_pct / 100.0) * 0.5 
-    m_oc = np.exp(-0.2 * (oc_pct - 1.5)) 
-    final_runoff = base_runoff * m_rain * m_oc
-    return np.minimum(100.0, final_runoff)
-
-# --- 3. Sidebar Inputs ---
+# --- 3. Sidebar Input ---
 st.sidebar.header("Model Parameters")
-v = st.sidebar.slider('Veg Cover (%)', min_value=0.0, max_value=100.0, value=0.0, step=1.0)
-years = st.sidebar.radio('Years Future', options=[0, 10, 25, 50])
+r = st.sidebar.slider(
+    'Gross Rain (mm)', 
+    min_value=0.0, 
+    max_value=1000.0, 
+    value=450.0, 
+    step=10.0
+)
 
 # --- 4. Core Calculations ---
-x_vals = np.linspace(0, 100, 500)
-r_inc, oc = project_parameters(v, years)
-veg_eq = get_equilibrium_veg()
+prod_estimate = estimate_productivity(r)
 
-sl = predict_soil_loss(v, r_inc, oc)
-ro = predict_runoff(v, r_inc, oc)
+# Calculate differences against the 450mm baseline
+rain_diff = r - BASE_RAIN
+prod_diff = prod_estimate - BASE_PROD
 
-if years == 0:
-    oc_trend = "(Baseline)"
-elif v > veg_eq + 0.5:
-    oc_trend = "(Regenerating)"
-elif v < veg_eq - 0.5:
-    oc_trend = "(Degrading)"
+# Determine Status
+if r < 120:
+    status_text = 'Status: Minimal Production (Drought)'
+elif r < 455:
+    status_text = 'Status: Water-Limited Growth'
 else:
-    oc_trend = "(Equilibrium)"
+    status_text = 'Status: Productivity Plateau'
 
-env_context = f"Context in Year {years}:\n• Erosivity Inc: +{r_inc:.1f}%\n• Projected OC: {oc:.2f}% {oc_trend}"
+# --- 5. Metrics Dashboard (Streamlit Native UI) ---
+col1, col2, col3 = st.columns(3)
+col1.metric("Selected Rainfall", f"{int(r)} mm", f"{int(rain_diff)} mm vs baseline" if r != BASE_RAIN else None)
+col2.metric("Estimated Yield", f"{int(prod_estimate)} kg/ha", f"{int(prod_diff)} kg/ha vs baseline" if r != BASE_RAIN else None)
+col3.info(status_text)
 
-status_text = 'Status: Tolerable' if sl <= 1.4 else 'Status: High Risk'
-text_color = '#27ae60' if sl <= 1.4 else '#c0392b'
+st.divider()
 
-# --- 5. Plotting Setup ---
+# --- 6. Plotting Setup ---
+try:
+    plt.style.use('seaborn-v0_8-whitegrid')
+except OSError:
+    try:
+        plt.style.use('seaborn-whitegrid')
+    except OSError:
+        pass 
+
+fig, ax1 = plt.subplots(figsize=(10, 7), facecolor='#f4f6f9')
+
+rain_range = np.linspace(0, 1000, 500)
+estimated_productivity = estimate_productivity(rain_range)
+
 box_style = dict(boxstyle='round,pad=0.8', facecolor='#ffffff', alpha=0.95, edgecolor='#bdc3c7', linewidth=1.5)
-marker_style = dict(marker='o', markersize=12, markerfacecolor='#f1c40f', markeredgecolor='#2c3e50', markeredgewidth=2, zorder=10)
+marker_style = dict(marker='o', markersize=13, markerfacecolor='#f1c40f', markeredgecolor='black', markeredgewidth=1.5, zorder=10)
 
-# Create two columns for a side-by-side layout
-col1, col2 = st.columns(2)
+# Main Plot: Estimated Productivity vs Annual Rainfall
+ax1.plot(rain_range, estimated_productivity, '#27ae60', lw=2.5, linestyle='--', label='Estimated Trendline')
 
-# --- Panel 1: Soil Loss (Left Column) ---
-with col1:
-    fig1, ax1 = plt.subplots(figsize=(7, 6), facecolor='#f4f6f9')
-    plt.subplots_adjust(bottom=0.15) 
+# Baseline Reference Point (450 mm)
+ax1.plot([BASE_RAIN], [BASE_PROD], marker='o', markersize=10, markerfacecolor='gray', markeredgecolor='black', zorder=9, label='Baseline (450 mm)')
+
+# Dynamic elements: current dot and deficit arrow
+ax1.plot([r], [prod_estimate], **marker_style, label='Current Selection')
+
+if r < BASE_RAIN:
+    ax1.annotate('', xy=(r, prod_estimate), xytext=(BASE_RAIN, BASE_PROD), 
+                 arrowprops=dict(facecolor='#e74c3c', shrink=0, width=2, headwidth=8), zorder=8)
+
+# Build text dynamically
+display_text = f'For {int(r)} mm Annual Rainfall:\nEstimated Yield: {int(prod_estimate)} kg/ha\n'
+
+if r < BASE_RAIN:
+    display_text += f'\n--- Deficit vs Baseline (450mm) ---\n'
+    display_text += f'Rain Decrease: {int(rain_diff)} mm\n'
+    display_text += f'Yield Loss: {int(prod_diff)} kg/ha\n'
     
-    color_soil = '#e74c3c'
-    new_y_soil = predict_soil_loss(x_vals, r_inc, oc)
-
-    ax1.plot(x_vals, new_y_soil, color=color_soil, lw=3)
-    ax1.fill_between(x_vals, new_y_soil, color=color_soil, alpha=0.15)
-    ax1.axhline(1.4, color='#27ae60', linestyle='--', lw=2, label='Tolerable Limit (1.4 t/ha/y)')
-    ax1.axvline(veg_eq, color='gray', linestyle=':', lw=1.5, label='OC Equilibrium')
-    ax1.axhspan(0, 1.4, color='#2ecc71', alpha=0.15)
-
-    ax1.plot([v], [sl], **marker_style)
-    text1_content = f'{env_context}\n\nSoil Loss: {sl:.2f} t/ha/y\n{status_text}'
-    ax1.text(0.40, 0.55, text1_content, transform=ax1.transAxes, fontsize=10, fontweight='bold', bbox=box_style, color=text_color)
-
-    ax1.set_xlim(0, 100)
-    ax1.set_ylim(0, 15)
-    ax1.set_ylabel('Soil loss (t/ha/y)', fontsize=12, fontweight='bold', color='#34495e')
-    ax1.set_xlabel('Vegetation cover (%)', fontsize=12, fontweight='bold', color='#34495e')
-    ax1.set_title('Future Soil Loss', fontsize=14, color='#34495e', pad=10)
-    ax1.grid(True, color='#e0e6ed', linestyle='-', linewidth=1)
+display_text += f'\n{status_text}'
     
-    st.pyplot(fig1)
+ax1.text(0.05, 0.85, display_text, transform=ax1.transAxes, fontsize=12, bbox=box_style, va='top', color='#2c3e50')
 
-# --- Panel 2: Runoff Coefficient (Right Column) ---
-with col2:
-    fig2, ax2 = plt.subplots(figsize=(7, 6), facecolor='#f4f6f9')
-    plt.subplots_adjust(bottom=0.15) 
-    
-    color_runoff = '#3498db'
-    new_y_runoff = predict_runoff(x_vals, r_inc, oc)
+# Plot settings
+ax1.set_xlim(0, 1000)
+ax1.set_ylim(0, 4500)
+ax1.set_ylabel('Productivity (kg/ha)', fontsize=12, fontweight='bold', color='#34495e')
+ax1.set_xlabel('Annual Rainfall (mm)', fontsize=12, fontweight='bold', color='#34495e')
+ax1.set_title('Agronomic Impact (Yield vs Rainfall)', fontsize=14, fontweight='bold', color='#34495e', pad=10)
+ax1.grid(True, color='#e0e6ed', linestyle='--', alpha=0.6, linewidth=1)
+ax1.legend(loc='lower right', framealpha=1, fontsize=10)
 
-    ax2.plot(x_vals, new_y_runoff, color=color_runoff, lw=3)
-    ax2.fill_between(x_vals, new_y_runoff, color=color_runoff, alpha=0.15)
-    ax2.axvline(veg_eq, color='gray', linestyle=':', lw=1.5, label='OC Equilibrium')
-
-    ax2.plot([v], [ro], **marker_style)
-    text2_content = f'{env_context}\n\nRunoff: {ro:.2f} %'
-    ax2.text(0.40, 0.65, text2_content, transform=ax2.transAxes, fontsize=10, fontweight='bold', bbox=box_style, color='#2980b9')
-
-    ax2.set_xlim(0, 100)
-    ax2.set_ylim(0, 15)
-    ax2.set_ylabel('Runoff coefficient (%)', fontsize=12, fontweight='bold', color='#34495e')
-    ax2.set_xlabel('Vegetation cover (%)', fontsize=12, fontweight='bold', color='#34495e')
-    ax2.set_title('Future Runoff', fontsize=14, color='#34495e', pad=10)
-    ax2.grid(True, color='#e0e6ed', linestyle='-', linewidth=1)
-    
-    st.pyplot(fig2)
+# Render the plot in Streamlit
+st.pyplot(fig)
