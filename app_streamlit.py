@@ -130,7 +130,7 @@ with col_charts2:
     
     # Plot Baseline vs Effective
     ax3.plot([gross_rain], [prod_base], marker='o', markersize=10, markerfacecolor='gray', markeredgecolor='black', label='Gross Rain (Baseline)')
-    ax3.plot([effective_rain], [prod_eff], **marker_style, markersize=14, label='Effective Rain (New Yield)')
+    ax3.plot([effective_rain], [prod_eff], **marker_style, label='Effective Rain (New Yield)')
     
     # Arrow showing the shift
     ax3.annotate('', xy=(effective_rain, prod_eff), xytext=(gross_rain, prod_base), 
