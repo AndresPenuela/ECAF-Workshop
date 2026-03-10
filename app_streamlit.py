@@ -42,7 +42,7 @@ RAIN_RANGE = np.linspace(0, 1000, 500)
 
 # --- 3. Sidebar Inputs ---
 st.sidebar.header("Model Parameters")
-veg_cover = st.sidebar.slider("Vegetation Cover (%)", min_value=0.0, max_value=100.0, value=35.0, step=1.0)
+veg_cover = st.sidebar.slider("Vegetation Cover (%)", min_value=0.0, max_value=100.0, value=0.0, step=1.0)
 gross_rain = st.sidebar.slider("Gross Annual Rain (mm)", min_value=150.0, max_value=1000.0, value=400.0, step=10.0)
 years_future = st.sidebar.selectbox("Prediction Timeframe (Years Future)", options=[0, 10, 25, 50])
 
