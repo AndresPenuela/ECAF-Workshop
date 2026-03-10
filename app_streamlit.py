@@ -94,7 +94,7 @@ with col_charts1:
     y_runoff = predict_runoff(X_VALS, r_inc, oc)
     ax1.plot(X_VALS, y_runoff, '#3498db', lw=3.5)
     ax1.fill_between(X_VALS, y_runoff, color='#3498db', alpha=0.15)
-    ax1.axvline(EQ_VEG, color='gray', linestyle=':', lw=2, label='OC Tipping Point')
+    ax1.axvline(EQ_VEG, color='gray', linestyle=':', lw=2)
     ax1.plot([veg_cover], [ro], **marker_style, zorder=10)
     
     ax1.set_xlim(0, 100)
