@@ -15,7 +15,7 @@ def project_parameters(veg_cover, years):
     rain_increase_pct = years * 0.5
     baseline_oc = 1.5
     veg_eq = get_equilibrium_veg()
-    annual_oc_change = (veg_cover - veg_eq) * 0.0005 
+    annual_oc_change = (veg_cover - veg_eq) * 0.001 
     future_oc = max(0.5, min(5.0, baseline_oc + (annual_oc_change * years))) 
     return rain_increase_pct, future_oc
 
@@ -43,7 +43,7 @@ RAIN_RANGE = np.linspace(0, 1000, 500)
 # --- 3. Sidebar Inputs ---
 st.sidebar.header("Model Parameters")
 veg_cover = st.sidebar.slider("Vegetation Cover (%)", min_value=0.0, max_value=100.0, value=35.0, step=1.0)
-gross_rain = st.sidebar.slider("Gross Annual Rain (mm)", min_value=150.0, max_value=1000.0, value=450.0, step=10.0)
+gross_rain = st.sidebar.slider("Gross Annual Rain (mm)", min_value=150.0, max_value=1000.0, value=400.0, step=10.0)
 years_future = st.sidebar.selectbox("Prediction Timeframe (Years Future)", options=[0, 10, 25, 50])
 
 # --- 4. Core Calculations ---
@@ -89,7 +89,7 @@ col_charts1, col_charts2 = st.columns(2)
 
 # --- Panel 1: Runoff ---
 with col_charts1:
-    fig1, ax1 = plt.subplots(figsize=(8, 6), facecolor='#f8f9fa')
+    fig1, ax1 = plt.subplots(figsize=(8, 5), facecolor='#f8f9fa')
     
     y_runoff = predict_runoff(X_VALS, r_inc, oc)
     ax1.plot(X_VALS, y_runoff, '#3498db', lw=3.5)
