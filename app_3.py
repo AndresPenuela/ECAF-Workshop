@@ -79,7 +79,7 @@ status_text = 'Status: Tolerable' if sl <= 1.4 else 'Status: High Risk'
 text_color = '#27ae60' if sl <= 1.4 else '#c0392b'
 
 # --- 5. Plotting Setup ---
-fig = plt.figure(figsize=(10, 8), facecolor='#f4f6f9')
+fig = plt.figure(figsize=(8, 5), facecolor='#f4f6f9')
 ax1 = fig.add_subplot(211, facecolor='white')
 ax2 = fig.add_subplot(212, facecolor='white')
 
