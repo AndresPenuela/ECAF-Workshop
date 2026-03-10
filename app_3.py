@@ -17,7 +17,7 @@ def project_parameters(veg_cover, years):
     rain_increase_pct = years * 0.5
     baseline_oc = 1.5
     veg_eq = get_equilibrium_veg() 
-    annual_oc_change = (veg_cover - veg_eq) * 0.001
+    annual_oc_change = (veg_cover - veg_eq) * 0.002
     future_oc = baseline_oc + (annual_oc_change * years)
     future_oc = max(0.5, min(5.0, future_oc)) 
     return rain_increase_pct, future_oc
